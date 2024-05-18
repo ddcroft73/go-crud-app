@@ -1,5 +1,7 @@
 ## GO CRUD API
 
+It's a basic CRUD app that allows a user to enter User Data. ALl users are displayed in a table, and any user can select a record to update, or delete, and even delete all records. This is pretty lame. The only reason there is a password field at all is to practice hashing. Basically anyone can wipe the database and wreck it all at any given time. It's just for learning. 
+
 So i'm learning GO. So far I am in love with it, and this is my first attempt at an actual API. I've done all the Go Web Examples that are found [www.gowebexamples.com](here). Basically I took all the examples, learned as much as I could abouot how Go works for building APIS. Routing, Database, JSON, middleware, password hashing, tempaltes, assets and files... Well the last two are only really applicable if you are building an all inclusive web app. I was going to do that. But I decided I'd stick to just the backend, and make a simple frontend with straight HTML, CSS, and JS. Thats the goal. The first commit will still have the templates directory and the statis directory, but they are being 86'd directly. 
 
 Pretty much, as of now... it's just boilerplate. I'm filling it all in as I learn more, and changing things I'm doing wrong.
