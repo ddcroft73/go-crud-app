@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
-	_ "simple-crud-app/internal/datastore"
+	"simple-crud-app/internal/datastore"
 	"simple-crud-app/internal/usecase"
 )
 
@@ -24,7 +24,12 @@ func homeHandler(db *sql.DB) http.HandlerFunc {
 		// Fetch all users from the database
 		users, err := usecase.GetAllUsers(db)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errorResponse := map[string]string{
+				"error": "Failed to fetch users",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
@@ -45,13 +50,18 @@ func homeHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// THis Handler is for the Roor POST method. it Creates a new user.
+// THis Handler is for the Root POST method. it Creates a new user.
 func createUserHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Parse the form data
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			errorResponse := map[string]string{
+				"error": "Bad Request",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
@@ -60,15 +70,22 @@ func createUserHandler(db *sql.DB) http.HandlerFunc {
 		password := r.FormValue("password")
 		message := r.FormValue("message")
 
-		err = usecase.CreateUser(db, username, email, password, message)
+		var user datastore.User
+
+		user, err = usecase.CreateUser(db, username, email, password, message)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errorResponse := map[string]string{
+				"error": "Error Creating New User.",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(user)
 	}
 }
 
-// Define other handlers for updating, deleting, and deleting all users
-// ...
+// TODO Define other handlers for updating, deleting, and deleting all users

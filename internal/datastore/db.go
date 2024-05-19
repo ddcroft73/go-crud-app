@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	ID       string
+	ID       int64
 	Username string
 	Email    string
 	Password string
@@ -35,7 +35,7 @@ func CreateTables(db *sql.DB) error {
                 id INT AUTO_INCREMENT,
                 username TEXT NOT NULL,
                 password TEXT NOT NULL,
-                created_at DATETIME,
+                message TEXT NOT NULL,
                 PRIMARY KEY (id)
             );`
 
