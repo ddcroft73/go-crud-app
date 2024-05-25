@@ -7,22 +7,21 @@ import (
 	"strings"
 )
 
-func GetUserByID(db *sql.DB, userID int64) (datastore.User, error) {
+func GetUserByID(db *sql.DB, userID int64) (*datastore.User, error) {
 	// Get a single uaet by ID.
 	row := db.QueryRow(`SELECT id, username, email, password, message FROM users WHERE id = ?`, userID)
 
 	var u datastore.User
 
-	err := row.Scan(&u.ID, &u.Username, &u.Password, &u.Email, &u.Message)
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.Message)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return u,
-				fmt.Errorf("user with ID %d not found", userID)
+			return nil, fmt.Errorf("User with ID %d not found", userID)
 		}
-		return u, err
+		return nil, err
 	}
 
-	return u, nil
+	return &u, nil
 }
 
 func GetAllUsers(db *sql.DB) ([]datastore.User, error) {
@@ -52,32 +51,28 @@ func GetAllUsers(db *sql.DB) ([]datastore.User, error) {
 	return users, nil
 }
 
-func CreateUser(db *sql.DB, username, email, password, message string) (datastore.User, error) {
-	// Create a new user in the database, on success return the users data
-	// on error, return the error
+func CreateUser(db *sql.DB, username, email, password, message string) (*datastore.User, error) {
+	// Create a new user in the database
 	// ...
 
-	var user datastore.User
-
 	result, err := db.Exec(
-		`INSERT INTO users (username, email, password,message) VALUES (?, ?, ?, ?)`,
+		`INSERT INTO users (username, email, password, message) VALUES (?, ?, ?, ?)`,
 		username, password, email, message)
 
 	if err != nil {
-		return datastore.User{}, err
+		return nil, err
 	}
 
 	userID, err := result.LastInsertId()
 	if err != nil {
-		return datastore.User{}, err
+		return nil, err
 	}
 
-	fmt.Printf("New user created, with ID: %d/n", userID)
-
-	user, err = GetUserByID(db, userID)
+	user, err := GetUserByID(db, userID)
 	if err != nil {
-		return datastore.User{}, err
+		return nil, err
 	}
+	fmt.Printf("New user created, with ID: %d/n", userID)
 	return user, nil
 }
 
@@ -96,54 +91,77 @@ func DeleteUser(db *sql.DB, userID int64) error {
 	return nil
 }
 
-func DeleteAll(db *sql.DB) {
-	// Delete all usersbin DB
+func DeleteAll(db *sql.DB) (bool, error) {
 
+	currUsers, err := GetAllUsers(db)
+	if err != nil {
+		return false, err
+	}
+
+	for _, user := range currUsers {
+		err = DeleteUser(db, user.ID)
+		if err != nil {
+			return false, err
+		}
+		fmt.Println("Deleted User ID: ", user.ID)
+	}
+
+	fmt.Println("Deleted all users")
+	return true, nil
 }
 
-func UpdateUser(db *sql.DB, userID int64, updateData *datastore.User) (datastore.User, error) {
-	// 5Update a user by the ID.
-
-	var u datastore.User
-
-	u, err := GetUserByID(db, userID)
-
+func UpdateUser(db *sql.DB, userID int64, updateData *datastore.User) (*datastore.User, error) {
+	// Fetch the current user to compare fields
+	currUser, err := GetUserByID(db, userID)
 	if err != nil {
-		return datastore.User{}, err
+		return nil, err
 	}
 
-	// holds the new data to be updated
 	var updates []string
+	var args []interface{}
+	idx := 1
 
-	if u.Username != updateData.Username {
-		updates = append(updates, `username = '${updateData.Username}'`)
+	if currUser.Username != updateData.Username {
+		updates = append(updates, fmt.Sprintf("username = $%d", idx))
+		args = append(args, updateData.Username)
+		idx++
 	}
 
-	if u.Email != updateData.Email {
-		updates = append(updates, `email = '${updateData.Email}'`)
+	if currUser.Email != updateData.Email {
+		updates = append(updates, fmt.Sprintf("email = $%d", idx))
+		args = append(args, updateData.Email)
+		idx++
 	}
 
-	if u.Password != updateData.Password {
-		updates = append(updates, `password = '${updateData.Password}'`)
+	if currUser.Password != updateData.Password {
+		updates = append(updates, fmt.Sprintf("password = $%d", idx))
+		args = append(args, updateData.Password)
+		idx++
 	}
 
-	if u.Message != updateData.Message {
-		updates = append(updates, `message = '${updateData.Message}'`)
+	if currUser.Message != updateData.Message {
+		updates = append(updates, fmt.Sprintf("message = $%d", idx))
+		args = append(args, updateData.Message)
+		idx++
 	}
 
-	sql := "UPDATE users SET " + strings.Join(updates, ", ") + " WHERE id = ?"
+	if len(updates) == 0 {
+		return currUser, nil // No updates needed
+	}
 
-	_, err = db.Exec(sql, userID)
+	sqlStatement := "UPDATE users SET " + strings.Join(updates, ", ") + fmt.Sprintf(" WHERE id = $%d", idx)
+	args = append(args, userID)
 
+	_, err = db.Exec(sqlStatement, args...)
 	if err != nil {
-		return datastore.User{}, err
+		return nil, err
 	}
 
-	u, err = GetUserByID(db, userID)
-
+	// Fetch the updated user to confirm changes
+	updatedUser, err := GetUserByID(db, userID)
 	if err != nil {
-		return datastore.User{}, err
+		return nil, err
 	}
 
-	return u, nil
+	return updatedUser, nil
 }
