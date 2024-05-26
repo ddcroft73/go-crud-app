@@ -9,14 +9,14 @@ import (
 
 func GetUserByID(db *sql.DB, userID int64) (*datastore.User, error) {
 	// Get a single uaet by ID.
-	row := db.QueryRow(`SELECT id, username, email, password, message FROM users WHERE id = ?`, userID)
+	row := db.QueryRow(`SELECT id, username, email, fullname, message FROM users WHERE id = ?`, userID)
 
 	var u datastore.User
 
-	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.Message)
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Fullname, &u.Message)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("User with ID %d not found", userID)
+			return nil, fmt.Errorf("user with ID %d not found", userID)
 		}
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func GetUserByID(db *sql.DB, userID int64) (*datastore.User, error) {
 func GetAllUsers(db *sql.DB) ([]datastore.User, error) {
 	// Fetch all users from the database
 
-	rows, err := db.Query(`SELECT id, username, email, password, message FROM users`)
+	rows, err := db.Query(`SELECT id, username, email, fullname, message FROM users`)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func GetAllUsers(db *sql.DB) ([]datastore.User, error) {
 
 	for rows.Next() {
 		var u datastore.User
-		err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.Password, &u.Message)
+		err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.Fullname, &u.Message)
 		if err != nil {
 			return nil, err
 		}
@@ -51,13 +51,15 @@ func GetAllUsers(db *sql.DB) ([]datastore.User, error) {
 	return users, nil
 }
 
-func CreateUser(db *sql.DB, username, email, password, message string) (*datastore.User, error) {
+func CreateUser(db *sql.DB, username, email, fullname, message string) (*datastore.User, error) {
 	// Create a new user in the database
 	// ...
 
+    // hash the password here
+
 	result, err := db.Exec(
-		`INSERT INTO users (username, email, password, message) VALUES (?, ?, ?, ?)`,
-		username, password, email, message)
+		`INSERT INTO users (username, email, fullname, message) VALUES (?, ?, ?, ?)`,
+		username, email, fullname, message)
 
 	if err != nil {
 		return nil, err
@@ -68,11 +70,13 @@ func CreateUser(db *sql.DB, username, email, password, message string) (*datasto
 		return nil, err
 	}
 
-	user, err := GetUserByID(db, userID)
+	userID64 := int64(userID)
+
+	user, err := GetUserByID(db, userID64)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("New user created, with ID: %d/n", userID)
+	fmt.Printf("New user created, with ID: %d/n", userID64)
 	return user, nil
 }
 
@@ -133,9 +137,9 @@ func UpdateUser(db *sql.DB, userID int64, updateData *datastore.User) (*datastor
 		idx++
 	}
 
-	if currUser.Password != updateData.Password {
-		updates = append(updates, fmt.Sprintf("password = $%d", idx))
-		args = append(args, updateData.Password)
+	if currUser.Fullname != updateData.Fullname {
+		updates = append(updates, fmt.Sprintf("fullname = $%d", idx))
+		args = append(args, updateData.Fullname)
 		idx++
 	}
 
