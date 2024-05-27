@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"simple-crud-app/internal/datastore"
+	"simple-crud-app/internal/util"
 	"strings"
 )
 
@@ -55,8 +56,6 @@ func CreateUser(db *sql.DB, username, email, fullname, message string) (*datasto
 	// Create a new user in the database
 	// ...
 
-    // hash the password here
-
 	result, err := db.Exec(
 		`INSERT INTO users (username, email, fullname, message) VALUES (?, ?, ?, ?)`,
 		username, email, fullname, message)
@@ -79,13 +78,10 @@ func CreateUser(db *sql.DB, username, email, fullname, message string) (*datasto
 	fmt.Printf("New user created, with ID: %d/n", userID64)
 	return user, nil
 }
-
 func DeleteUser(db *sql.DB, userID int64) error {
-	// Delete a user from thr database based on ID
+	// Delete a user from the database based on ID
 
 	result, err := db.Exec(`DELETE FROM users WHERE id = ?`, userID)
-	defer db.Close()
-
 	if err != nil {
 		return err
 	}
@@ -96,7 +92,6 @@ func DeleteUser(db *sql.DB, userID int64) error {
 }
 
 func DeleteAll(db *sql.DB) (bool, error) {
-
 	currUsers, err := GetAllUsers(db)
 	if err != nil {
 		return false, err
@@ -112,6 +107,7 @@ func DeleteAll(db *sql.DB) (bool, error) {
 
 	fmt.Println("Deleted all users")
 	return true, nil
+
 }
 
 func UpdateUser(db *sql.DB, userID int64, updateData *datastore.User) (*datastore.User, error) {
@@ -120,47 +116,38 @@ func UpdateUser(db *sql.DB, userID int64, updateData *datastore.User) (*datastor
 	if err != nil {
 		return nil, err
 	}
-
 	var updates []string
 	var args []interface{}
-	idx := 1
 
 	if currUser.Username != updateData.Username {
-		updates = append(updates, fmt.Sprintf("username = $%d", idx))
+		updates = append(updates, "username = ?")
 		args = append(args, updateData.Username)
-		idx++
 	}
 
 	if currUser.Email != updateData.Email {
-		updates = append(updates, fmt.Sprintf("email = $%d", idx))
+		updates = append(updates, "email = ?")
 		args = append(args, updateData.Email)
-		idx++
 	}
 
 	if currUser.Fullname != updateData.Fullname {
-		updates = append(updates, fmt.Sprintf("fullname = $%d", idx))
+		updates = append(updates, "fullname = ?")
 		args = append(args, updateData.Fullname)
-		idx++
 	}
 
 	if currUser.Message != updateData.Message {
-		updates = append(updates, fmt.Sprintf("message = $%d", idx))
+		updates = append(updates, "message = ?")
 		args = append(args, updateData.Message)
-		idx++
 	}
 
-	if len(updates) == 0 {
-		return currUser, nil // No updates needed
-	}
-
-	sqlStatement := "UPDATE users SET " + strings.Join(updates, ", ") + fmt.Sprintf(" WHERE id = $%d", idx)
+	// Construct the SQL statement with proper placeholders
+	sqlStatement := "UPDATE users SET " + strings.Join(updates, ", ") + " WHERE id = ?"
 	args = append(args, userID)
 
 	_, err = db.Exec(sqlStatement, args...)
 	if err != nil {
+		util.WriteLog("Error executing SQL query: %s", err.Error())
 		return nil, err
 	}
-
 	// Fetch the updated user to confirm changes
 	updatedUser, err := GetUserByID(db, userID)
 	if err != nil {

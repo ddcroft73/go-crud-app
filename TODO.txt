@@ -1,0 +1,2 @@
+WHen creating a new user, the initial user is also being created.
+And it will only work after you restart the API

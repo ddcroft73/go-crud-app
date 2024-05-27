@@ -1,15 +1,15 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"simple-crud-app/internal/datastore"
 	"simple-crud-app/internal/delivery"
-	"github.com/gorilla/mux"
 )
 
 func main() {
-    
+
 	r := mux.NewRouter()
 
 	db, err := datastore.ConnectDB()
@@ -20,10 +20,10 @@ func main() {
 
 	err = datastore.CreateTables(db)
 	if err != nil {
-		log.Fatal("Error creating table.",err)
+		log.Fatal("Error creating table.", err)
 	}
 
-    if err := datastore.CreateInitialUserIfNeeded(db); err != nil {
+	if err := datastore.CreateInitialUserIfNeeded(db); err != nil {
 		log.Printf("Error setting up initial user: %v", err)
 	}
 

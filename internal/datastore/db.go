@@ -53,7 +53,6 @@ func CreateTables(db *sql.DB) error {
 	return nil
 }
 
-
 func checkTableExists(db *sql.DB, tableName string) bool {
 	var tmp string
 	query := `SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?`
@@ -68,7 +67,6 @@ func checkUserExists(tx *sql.Tx) (bool, error) {
 	err := tx.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = 1)").Scan(&exists)
 	return exists, err
 }
-
 
 func CreateInitialUserIfNeeded(db *sql.DB) error {
 	tx, err := db.Begin()
