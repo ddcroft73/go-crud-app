@@ -7,11 +7,12 @@ import (
 	"simple-crud-app/internal/datastore"
 	"simple-crud-app/internal/usecase"
 	"simple-crud-app/internal/util"
+    "encoding/json"
 )
 
 func SetupRoutes(r *mux.Router, db *sql.DB) {
 	r.HandleFunc("/", homeHandler(db)).Methods("GET")
-	r.HandleFunc("/create-user", createUserHandler(db)).Methods("POST")
+	r.HandleFunc("/", createUserHandler(db)).Methods("POST")
 	r.HandleFunc("/update/{id}", updateUserHandler(db)).Methods("PUT")
 	r.HandleFunc("/delete/{id}", deleteUserHandler(db)).Methods("POST")
 	r.HandleFunc("/delete-all", deleteAllUsersHandler(db)).Methods("POST")
@@ -38,6 +39,7 @@ func homeHandler(db *sql.DB) http.HandlerFunc {
 		for _, user := range users {
 
 			userMap := map[string]interface{}{
+                "id":       user.ID,                
 				"username": user.Username,
 				"email":    user.Email,
 				"fullname": user.Fullname,
@@ -51,29 +53,28 @@ func homeHandler(db *sql.DB) http.HandlerFunc {
 }
 
 func createUserHandler(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+    return func(w http.ResponseWriter, r *http.Request) {
+        var user struct {
+            Username string `json:"username"`
+            Email    string `json:"email"`
+            Fullname string `json:"fullname"`
+            Message  string `json:"message"`
+        }
 
-		err := r.ParseForm()
-		if err != nil {
-			util.RespondWithError(w, http.StatusBadRequest, "Bad Request")
-			return
-		}
+        err := json.NewDecoder(r.Body).Decode(&user)
+        if err != nil {
+            util.RespondWithError(w, http.StatusBadRequest, "Bad Request")
+            return
+        }
 
-		username := r.FormValue("username")
-		email := r.FormValue("email")
-		fullname := r.FormValue("fullname")
-		message := r.FormValue("message")
+        newUser, err := usecase.CreateUser(db, user.Username, user.Email, user.Fullname, user.Message)
+        if err != nil {
+            util.RespondWithError(w, http.StatusInternalServerError, "Error Creating New User.")
+            return
+        }
 
-		var user *datastore.User
-
-		user, err = usecase.CreateUser(db, username, email, fullname, message)
-		if err != nil {
-			util.RespondWithError(w, http.StatusInternalServerError, "Error Creating New User.")
-			return
-		}
-
-		util.RespondWithSuccess(w, user)
-	}
+        util.RespondWithSuccess(w, newUser)
+    }
 }
 
 func updateUserHandler(db *sql.DB) http.HandlerFunc {

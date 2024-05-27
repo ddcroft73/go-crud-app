@@ -15,7 +15,8 @@ type User struct {
 }
 
 func ConnectDB() (*sql.DB, error) {
-	// Connect to the database
+	// Connect to the database, and return a pointer to the db to be used throughout
+    // the application
 	db, err := sql.Open("mysql", "new_user:password@tcp(localhost:3306)/goCRUD")
 	if err != nil {
 		return nil, err
