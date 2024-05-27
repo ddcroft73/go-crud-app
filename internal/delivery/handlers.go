@@ -17,11 +17,16 @@ func SetupRoutes(r *mux.Router, db *sql.DB) {
 	r.HandleFunc("/delete-all", deleteAllUsersHandler(db)).Methods("POST")
 }
 
-// THis is the root endpoint for the GET method. When a user accesses the site, all users are gathered and
+// the handlers actually return another function that deals with the request and the reponse
+// I use the handlers to deal with the request and then call another function elsewhere to do the
+// actual work and then return the results to be sent back in the response. I believe this is called a closure
+// or higher order function to create a handler function that captures dependencies (dependency injection) or configuration.
+
+// When a user accesses the site, all users are gathered and
 // sent to the client to populate the table.
 func homeHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Fetch all users from the database
+
 		users, err := usecase.GetAllUsers(db)
 		if err != nil {
 			util.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch users")
@@ -45,10 +50,9 @@ func homeHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// THis Handler is for the Root POST method. it Creates a new user.
 func createUserHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Parse the form data
+
 		err := r.ParseForm()
 		if err != nil {
 			util.RespondWithError(w, http.StatusBadRequest, "Bad Request")
@@ -61,7 +65,7 @@ func createUserHandler(db *sql.DB) http.HandlerFunc {
 		message := r.FormValue("message")
 
 		var user *datastore.User
-        
+
 		user, err = usecase.CreateUser(db, username, email, fullname, message)
 		if err != nil {
 			util.RespondWithError(w, http.StatusInternalServerError, "Error Creating New User.")
@@ -72,7 +76,6 @@ func createUserHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// this function returns anoyjet funxtion, which is the actual handler
 func updateUserHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the id from thr url.
@@ -85,7 +88,6 @@ func updateUserHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Parse the form data
 		err = r.ParseForm()
 		if err != nil {
 			util.RespondWithError(w, http.StatusBadRequest, "Failed to parse form data.")
@@ -96,7 +98,6 @@ func updateUserHandler(db *sql.DB) http.HandlerFunc {
 		email := r.FormValue("email")
 		fullname := r.FormValue("fullname")
 		message := r.FormValue("message")
-        
 
 		updateData := &datastore.User{
 			Username: username,
@@ -105,7 +106,6 @@ func updateUserHandler(db *sql.DB) http.HandlerFunc {
 			Message:  message,
 		}
 
-		// Update the user using the UpdateUser function
 		updatedUser, err := usecase.UpdateUser(db, userID64, updateData)
 		if err != nil {
 			util.RespondWithError(w, http.StatusBadRequest, err.Error())
@@ -128,13 +128,12 @@ func deleteUserHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// attempt to delete the User
 		err = usecase.DeleteUser(db, userID64)
 		if err != nil {
 			util.RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-        
+
 		util.RespondWithSuccess(w, map[string]string{"success": "User deleted."})
 	}
 }

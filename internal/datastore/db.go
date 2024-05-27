@@ -63,23 +63,19 @@ func checkTableExists(db *sql.DB, tableName string) bool {
 	return err != sql.ErrNoRows
 }
 func checkUserExists(tx *sql.Tx) (bool, error) {
-	//var exists bool
-	//err := tx.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = 1)").Scan(&exists)
-	//return exists, err
-    // Execute a query to count the number of records in a table
+	// Check if any user exists, not going by ID because the ID could literally
+	// be any number.
+	var count int
+	err := tx.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    var count int
-    err := tx.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Check if the count is zero
-    if count == 0 {
-        return false, nil
-    } else {
-        return true, nil
-    }
+	if count == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
 }
 
 func CreateInitialUserIfNeeded(db *sql.DB) error {

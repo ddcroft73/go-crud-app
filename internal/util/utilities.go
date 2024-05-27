@@ -9,7 +9,9 @@ import (
 	"strconv"
 )
 
-// Logger functions to write to a file for debugginf purposes.
+// Logger functions to write to a file for debugging purposes. If all is working well
+// THese 2 functions will not be used. However this little system cpuld also be used
+// to log inportant data as well so in they stay.
 func logger() *os.File {
 	logFile, err := os.OpenFile("api.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -19,6 +21,8 @@ func logger() *os.File {
 	return logFile
 }
 
+// allows me to log any type of data, and as much as needed as long as they
+// are separated by commas.
 func WriteLog(message interface{}, arg ...interface{}) {
 	logFile := logger()
 	defer logFile.Close() // Close the log file when the application exits
@@ -27,7 +31,8 @@ func WriteLog(message interface{}, arg ...interface{}) {
 	logger.Println(message, arg)
 }
 
-// Functions to send respoonses back to the client.
+// when sending a users ID in the request this processes it returns
+// the id in int64.
 func ParseUserID(vars map[string]string) (int64, error) {
 	idStr, ok := vars["id"]
 	if !ok {
@@ -39,6 +44,9 @@ func ParseUserID(vars map[string]string) (int64, error) {
 	}
 	return int64(userID), nil
 }
+
+// Functions to send respoonses back to the client. This keeps the code so much
+// cleaner, DRY and modular
 func RespondWithError(w http.ResponseWriter, code int, message string) {
 	respondWithJSON(w, code, map[string]string{"error": message})
 }
