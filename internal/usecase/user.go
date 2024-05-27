@@ -61,6 +61,7 @@ func CreateUser(db *sql.DB, username, email, fullname, message string) (*datasto
 		username, email, fullname, message)
 
 	if err != nil {
+        util.WriteLog(err.Error())
 		return nil, err
 	}
 
@@ -78,9 +79,10 @@ func CreateUser(db *sql.DB, username, email, fullname, message string) (*datasto
 	fmt.Printf("New user created, with ID: %d/n", userID64)
 	return user, nil
 }
+
 func DeleteUser(db *sql.DB, userID int64) error {
 	// Delete a user from the database based on ID
-
+    
 	result, err := db.Exec(`DELETE FROM users WHERE id = ?`, userID)
 	if err != nil {
 		return err
@@ -88,6 +90,7 @@ func DeleteUser(db *sql.DB, userID int64) error {
 
 	rowsAffected, _ := result.RowsAffected()
 	fmt.Println("Rows affected: ", rowsAffected)
+
 	return nil
 }
 
@@ -104,7 +107,7 @@ func DeleteAll(db *sql.DB) (bool, error) {
 		}
 		fmt.Println("Deleted User ID: ", user.ID)
 	}
-
+    
 	fmt.Println("Deleted all users")
 	return true, nil
 
@@ -118,31 +121,53 @@ func UpdateUser(db *sql.DB, userID int64, updateData *datastore.User) (*datastor
 	}
 	var updates []string
 	var args []interface{}
-
+    
+    // If there is no data being sent in updatData, set it back to the currUser.
+    // THis way you only need to include the fields that are being updated.
 	if currUser.Username != updateData.Username {
 		updates = append(updates, "username = ?")
-		args = append(args, updateData.Username)
+        
+        if  updateData.Username == "" {
+            args = append(args, currUser.Username)
+        } else {
+            args = append(args, updateData.Username)
+        }		
 	}
 
 	if currUser.Email != updateData.Email {
 		updates = append(updates, "email = ?")
-		args = append(args, updateData.Email)
+
+        if updateData.Email == "" {
+            args = append(args, currUser.Email)
+        } else {
+            args = append(args, updateData.Email)
+        }		
 	}
 
 	if currUser.Fullname != updateData.Fullname {
 		updates = append(updates, "fullname = ?")
-		args = append(args, updateData.Fullname)
+
+        if updateData.Fullname == "" {
+            args = append(args, currUser.Fullname)
+        } else {
+            args = append(args, updateData.Fullname)
+        }		
 	}
 
 	if currUser.Message != updateData.Message {
 		updates = append(updates, "message = ?")
-		args = append(args, updateData.Message)
+
+        if updateData.Message == "" {            
+	    	args = append(args, currUser.Message)
+        } else {
+            args = append(args, updateData.Message)
+        }
 	}
 
 	// Construct the SQL statement with proper placeholders
 	sqlStatement := "UPDATE users SET " + strings.Join(updates, ", ") + " WHERE id = ?"
 	args = append(args, userID)
-
+    
 	_, err = db.Exec(sqlStatement, args...)
 	if err != nil {
 		util.WriteLog("Error executing SQL query: %s", err.Error())

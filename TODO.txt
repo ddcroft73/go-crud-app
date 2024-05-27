@@ -1,2 +1,9 @@
 WHen creating a new user, the initial user is also being created.
-And it will only work after you restart the API
+And it will only work after you restart the API                      FIXED!
+
+On update, If you dont explictily add all fields, they are deleted.   DONE!
+
+the Delete requests seem to be causing havoc, and this is becasue after a delete, a call to defer db.Close() shuts the db
+Down totally. I took out these calls and the app seems to be working perfectly.  FIXED!
+
+The Backend seems to be working fine. 

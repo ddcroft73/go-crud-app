@@ -11,7 +11,7 @@ import (
 
 func SetupRoutes(r *mux.Router, db *sql.DB) {
 	r.HandleFunc("/", homeHandler(db)).Methods("GET")
-	r.HandleFunc("/", createUserHandler(db)).Methods("POST")
+	r.HandleFunc("/create-user", createUserHandler(db)).Methods("POST")
 	r.HandleFunc("/update/{id}", updateUserHandler(db)).Methods("PUT")
 	r.HandleFunc("/delete/{id}", deleteUserHandler(db)).Methods("POST")
 	r.HandleFunc("/delete-all", deleteAllUsersHandler(db)).Methods("POST")
@@ -92,15 +92,12 @@ func updateUserHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Get the updated user data from the form
 		username := r.FormValue("username")
 		email := r.FormValue("email")
 		fullname := r.FormValue("fullname")
 		message := r.FormValue("message")
+        
 
-		// Create a new User instance with the updated data
-		// yo be passed into the updateUser function
-		// in delivery/usecase
 		updateData := &datastore.User{
 			Username: username,
 			Email:    email,
@@ -137,8 +134,7 @@ func deleteUserHandler(db *sql.DB) http.HandlerFunc {
 			util.RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-
-        defer db.Close()
+        
 		util.RespondWithSuccess(w, map[string]string{"success": "User deleted."})
 	}
 }
@@ -152,7 +148,6 @@ func deleteAllUsersHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-        defer db.Close()
 		util.RespondWithSuccess(w, map[string]string{"success": "All Users deleted."})
 	}
 }
