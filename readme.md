@@ -1,9 +1,9 @@
 ## GO CRUD WEB API
 
 
-A Basic WebAPI written in GO. This is my first CRUD application written in GO. Currently it has 4 endpoints. 
+A Basic WebAPI written in GO. 
 
-- / or root to collect all users in the database.
+- / collect all users in the database.
 - create-user, 
 - update/{id}, 
 - delete/{id}, 
