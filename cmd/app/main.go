@@ -31,7 +31,7 @@ func main() {
 	delivery.SetupRoutes(r, db)
     
 
-	// Enable CORS
+	// Enable CORS... 
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
